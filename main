@@ -1,0 +1,77 @@
+import sys
+from PyQt6.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QWidget
+import threading
+from time import sleep
+import os
+from time import strftime, gmtime
+from PyQt6.QtGui import QGuiApplication
+from PyQt6.QtQml import QQmlApplicationEngine
+from PyQt6.QtQuick import QQuickWindow
+from PyQt6.QtCore import QObject, pyqtSignal
+
+# Define event handlers
+
+
+def button_click():
+    print("Button clicked!")
+
+
+# Create the application object
+app = QApplication(sys.argv)
+
+# Create the main window widget
+window = QWidget()
+
+# Create the widgets
+label = QLabel("This is a test application!")
+button = QPushButton("Click me!")
+
+# Connect the button click event to the handler function
+button.clicked.connect(button_click)
+
+# Add the widgets to the main window
+layout = QVBoxLayout()
+layout.addWidget(label)
+layout.addWidget(button)
+window.setLayout(layout)
+
+# Show the main window
+window.show()
+
+# Start the event loop
+sys.exit(app.exec())
+
+
+class Backend(QObject):
+    def __init__(self):
+        QObject.__init__(self)
+
+    updated = pyqtSignal(str, arguments=['updater'])
+
+    def updater(self, curr_time):
+        self.updated.emit(curr_time)
+
+    def bootUp(self):
+        t_thread = threading.Thread(target=self._bootUp)
+        t_thread.daemon = True
+        t_thread.start()
+
+    def _bootUp(self):
+        while True:
+            curr_time = strftime("%H:%M:%S", gmtime())
+            self.updater(curr_time)
+            sleep(0.1)
+
+
+QQuickWindow.setSceneGraphBackend('software')
+app = QGuiApplication(sys.argv)
+engine = QQmlApplicationEngine()
+engine.quit.connect(app.quit)
+# print("check")
+# sys.stdout.flush()
+curr_time = strftime("%H:%M:%S", gmtime())
+engine.load('./UI/main.qml')
+back_end = Backend()
+engine.rootObjects()[0].setProperty('backend', back_end)
+back_end.bootUp()
+sys.exit(app.exec())
