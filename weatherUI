@@ -1,0 +1,75 @@
+import sys
+import requests
+from PyQt6.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QWidget, QLineEdit
+from PyQt6.QtGui import QPixmap
+from PyQt6.QtCore import QTimer, QDateTime, Qt
+import config
+
+# Define the function to fetch weather data
+
+
+def get_weather():
+    location = location_entry.text()
+    url = f"https://api.openweathermap.org/data/2.5/weather?q={location}&appid={config.API_KEY}"
+    response = requests.get(url)
+    data = response.json()
+    temp = data['main']['temp']
+    temp = round(temp-273.15)
+    humidity = data['main']['humidity']
+    description = data['weather'][0]['description']
+    weather_label.setText(
+        f"Temperature: {temp} \u00b0C\nHumidity: {humidity}%\nDescription: {description}")
+
+
+# Create the application object
+app = QApplication(sys.argv)
+
+# Create the main window widget
+window = QWidget()
+window.setFixedSize(400, 300)
+window.setWindowTitle("Kids weather watch")
+
+
+# Create the label widget with the background image
+pixmap = QPixmap("UI\images\image1.jpg").scaled(window.size())
+background_label = QLabel(parent=window)
+background_label.setPixmap(pixmap)
+background_label.setGeometry(window.geometry())
+
+# Create the widgets
+location_label = QLabel("Enter a location:")
+location_entry = QLineEdit()
+button = QPushButton("Get weather")
+weather_label = QLabel()
+
+# Create the label widget to display the current date and time
+time_label = QLabel()
+time_label.setAlignment(Qt.center)
+time_label.setStyleSheet("font-size: 24pt; font-weight: bold;")
+
+# Connect the button click event to the handler function
+button.clicked.connect(get_weather)
+
+# Create the timer to update the clock every second
+timer = QTimer()
+timer.timeout.connect(lambda: time_label.setText(
+    QDateTime.currentDateTime().toString("yyyy-MM-dd hh:mm:ss")))
+timer.start(100)
+
+# Add the widgets to the main window
+layout = QVBoxLayout()
+layout.addWidget(location_label)
+layout.addWidget(location_entry)
+layout.addWidget(button)
+layout.addWidget(weather_label)
+layout.addWidget(time_label)
+window.setLayout(layout)
+
+# Set the background label to be behind the other widgets
+background_label.lower()
+
+# Show the main window
+window.show()
+
+# Start the event loop
+sys.exit(app.exec())
